@@ -27,15 +27,15 @@ type WhoIsServer struct {
 	Calls int
 }
 
-func initNameRuse() *NameRuse {
+func InitNameRuse() *NameRuse {
 	nr := new(NameRuse)
 	
 	nr.CheckHost = true
 	nr.CheckWhois = true
 	nr.Verbouse = false
 
-	nr.addWhoIs("com.whois-servers.net:43")
-	nr.addWhoIs("whois.crsnic.net:43")
+	nr.AddWhoIs("com.whois-servers.net:43")
+	nr.AddWhoIs("whois.crsnic.net:43")
 
 	nr.GenerateCallBack = func (a string) bool {
 		if(nr.Verbouse) {
@@ -48,7 +48,7 @@ func initNameRuse() *NameRuse {
 	return nr;
 }
 
-func (nr *NameRuse) addWhoIs(addr string) {
+func (nr *NameRuse) AddWhoIs(addr string) {
 	if(nr.Verbouse) {
 		log.Println("Added WhoIs Server at " + addr + ". ")
 	}
@@ -57,7 +57,7 @@ func (nr *NameRuse) addWhoIs(addr string) {
 }
 
 
-func (nr *NameRuse) getWhoisServer() string {
+func (nr *NameRuse) GetWhoisServer() string {
 	smallestCall := nr.Servers[0].Calls
 	smallestIndex := 0
 
@@ -72,8 +72,8 @@ func (nr *NameRuse) getWhoisServer() string {
 	return nr.Servers[smallestIndex].Addr
 }
 
-func (nr *NameRuse) isFreeByWhois(domain string) bool {
-	whois, err := net.Dial("tcp", nr.getWhoisServer())
+func (nr *NameRuse) IsFreeByWhois(domain string) bool {
+	whois, err := net.Dial("tcp", nr.GetWhoisServer())
 
 	if err != nil {
 		fmt.Println(err)
@@ -108,7 +108,7 @@ func (nr *NameRuse) isFreeByWhois(domain string) bool {
 	return true
 } 
 
-func (nr *NameRuse) hipsterize(word string) (string, bool) {
+func (nr *NameRuse) Hipsterize(word string) (string, bool) {
 	//TODO: Add more TLDs
 	tld := []string{"ru", "porn" , "ro", "io", "ie", "eo", "iu", "ae"}
 
@@ -125,7 +125,7 @@ func (nr *NameRuse) hipsterize(word string) (string, bool) {
 	return string(word), false
 }
 
-func (nr *NameRuse) isFreeByHost(word string) bool {
+func (nr *NameRuse) IsFreeByHost(word string) bool {
 	val, err := net.LookupHost(word)
 	if(err == nil && len(val) == 1) {
 		if(nr.Verbouse) {
@@ -141,23 +141,23 @@ func (nr *NameRuse) isFreeByHost(word string) bool {
 	}	
 }
 
-func (nr *NameRuse) isDomainTaken(word string) bool {
+func (nr *NameRuse) IsDomainTaken(word string) bool {
 	if(nr.CheckHost == false && nr.CheckWhois == false) {
 		panic("CheckWhois and CheckHost cannot be both false.")
 	}
 
-	if(!nr.isFreeByHost(word) && nr.CheckHost) {
+	if(!nr.IsFreeByHost(word) && nr.CheckHost) {
 		return true;
 	}
 
-	if(!nr.isFreeByWhois(word) && nr.CheckWhois) {
+	if(!nr.IsFreeByWhois(word) && nr.CheckWhois) {
 		return true;
 	}
 
 	return false;
 }
 
-func (nr *NameRuse) isRepeating(word string) bool {
+func (nr *NameRuse) IsRepeating(word string) bool {
 	for _, name := range nr.Names {
 		if name == word {
 			if(nr.Verbouse) {
@@ -170,7 +170,7 @@ func (nr *NameRuse) isRepeating(word string) bool {
 	return false
 }
 
-func (nr *NameRuse) generateName(format string) string {
+func (nr *NameRuse) GenerateName(format string) string {
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	result 	   := []rune(format)
@@ -192,13 +192,13 @@ func (nr *NameRuse) generateName(format string) string {
 	return string(result)
 }
 
-func (nr *NameRuse) generateN(format string, n int) []string {
+func (nr *NameRuse) GenerateN(format string, n int) []string {
 	nr.LoopFails = 0
 	for i := 0; i < n && nr.LoopFails != 3; i++ {
-		result := nr.generateName(format)
-		if(nr.isRepeating(result)) {
+		result := nr.GenerateName(format)
+		if(nr.IsRepeating(result)) {
 			nr.LoopFails = nr.LoopFails + 1
-			nr.generateName(format)
+			nr.GenerateName(format)
 		} else {
 			if(nr.GenerateCallBack(string(result))) {
 				nr.Names = append(nr.Names, string(result))
