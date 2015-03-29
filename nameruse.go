@@ -44,7 +44,7 @@ func InitNameRuse() *NameRuse {
 	nr.CheckHost = true
 	nr.CheckWhois = true
 	nr.Verbouse = false
-	nr.MaxLoopFails = 5
+	nr.MaxLoopFails = 20
 
 	nr.AddWhoIs("com.whois-servers.net:43")
 	nr.AddWhoIs("whois.crsnic.net:43")
@@ -118,9 +118,10 @@ func (nr *NameRuse) GenerateName(format string) string {
 
 func (nr *NameRuse) GenerateN(format string, n int) (*NameRuse) {
 	nr.LoopFails = 0
+	CheckedNames := []string{}
 	for i := 0; i < n && (nr.LoopFails != nr.MaxLoopFails); i=i {
 		result := nr.GenerateName(format)
-		if(nr.IsRepeating(result)) {
+		if(nr.IsRepeating(result, CheckedNames)) {
 			if(nr.Verbouse) {
 				log.Printf("Element is being repeated. [%d/%d]\n", nr.LoopFails, nr.MaxLoopFails)
 			}
@@ -128,6 +129,7 @@ func (nr *NameRuse) GenerateN(format string, n int) (*NameRuse) {
 			nr.LoopFails = nr.LoopFails + 1
 			continue
 		} else {
+			CheckedNames = append(CheckedNames, result) 
 			if(nr.Validate(string(result))) {
 				nr.Names = append(nr.Names, string(result))
 				i = i + 1				

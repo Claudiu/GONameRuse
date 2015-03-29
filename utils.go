@@ -65,12 +65,23 @@ func (nr *NameRuse) IsDomainTaken(word string) bool {
 	return false;
 }
 
-func (nr *NameRuse) IsRepeating(word string) bool {
+func (nr *NameRuse) IsRepeating(word string, checked []string) bool {
 	for _, name := range nr.Names {
 		if name == word {
 			if(nr.Verbouse) {
 				log.Println(word + " is already in list. ")
 			}
+
+			return true;
+		}
+	}
+
+	for _, name := range checked {
+		if name == word {
+			if(nr.Verbouse) {
+				log.Println(word + " is already in list. ")
+			}
+
 			return true;
 		}
 	}
