@@ -106,6 +106,14 @@ func (nr *NameRuse) GenerateName(format string) string {
 			result[index] = vowels[rand.Intn(len(vowels))]
 		} else if (letter == 'C') {
 			result[index] = consonants[rand.Intn(len(consonants))]
+		} else if (letter == '*') {
+			any := rand.Intn(10)
+			
+			if(any < 5) {
+				result[index] = vowels[rand.Intn(len(vowels))]
+			} else {
+				result[index] = consonants[rand.Intn(len(consonants))]
+			}
 		}
 	}
 
