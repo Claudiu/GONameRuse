@@ -9,18 +9,18 @@ import (
 var vowels 	   = []rune{'a', 'e', 'i', 'o', 'u'}
 var consonants = []rune{'b', 'c', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'm', 'n', 'p', 'q', 'r', 's', 't', 'v', 'x', 'z'}
 
-
 type NameRuse struct {
 	Names []string
 	LoopFails int
 	MaxLoopFails int
 	Servers []WhoIsServer
-	GenerateCallBack cb
+	GenerateCallBacks []Callback
 
 	Callbacks struct {
 		CheckCom cb
 		CheckComAndNet cb
 		CheckNone cb
+		CheckLevenshtein cb
 	}
 
 	CheckHost bool
@@ -31,6 +31,11 @@ type NameRuse struct {
 type WhoIsServer struct {
 	Addr string
 	Calls int
+}
+
+type Callback struct {
+	Params interface{}
+	Function cb
 }
 
 func InitNameRuse() *NameRuse {
@@ -46,7 +51,7 @@ func InitNameRuse() *NameRuse {
 
 	nr.initCallbacks()
 
-	nr.GenerateCallBack = CheckComAndNet
+	nr.AddValidator(CheckNone, nil)
 
 	return nr;
 }
@@ -68,11 +73,33 @@ func (nr *NameRuse) Hipsterize(word string) (string, bool) {
 	return string(word), false
 }
 
+func (nr *NameRuse) AddValidator(fun cb, params interface{}) (*NameRuse) {
+	that := Callback{Function: fun, Params: params}
+	nr.GenerateCallBacks = append(nr.GenerateCallBacks, that)
+	return nr
+}
+
+func (nr *NameRuse) AddLevensthein(source string, miniumum int) (*NameRuse) {
+	nr.AddValidator(nr.Callbacks.CheckLevenshtein, LevensteinParam {Like: source, Minimum: miniumum});
+	return nr
+}
+
+func (nr *NameRuse) Validate(word string) bool {
+	for _, val := range nr.GenerateCallBacks {
+		if(val.Function(nr, word, val.Params)) {
+			continue
+		} else {
+			return false
+		}				
+	}
+
+	return true	
+}
 
 func (nr *NameRuse) GenerateName(format string) string {
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	result 	   := []rune(format)
+	result := []rune(format)
 
 	for index, letter := range result {
 		if(letter == 'V') {
@@ -89,23 +116,28 @@ func (nr *NameRuse) GenerateName(format string) string {
 	return string(result)
 }
 
-func (nr *NameRuse) GenerateN(format string, n int) []string {
+func (nr *NameRuse) GenerateN(format string, n int) (*NameRuse) {
 	nr.LoopFails = 0
-	for i := 0; i < n && nr.LoopFails != nr.MaxLoopFails; i++ {
+	for i := 0; i < n && (nr.LoopFails != nr.MaxLoopFails); i=i {
 		result := nr.GenerateName(format)
 		if(nr.IsRepeating(result)) {
+			if(nr.Verbouse) {
+				log.Printf("Element is being repeated. [%d/%d]\n", nr.LoopFails, nr.MaxLoopFails)
+			}
+
 			nr.LoopFails = nr.LoopFails + 1
-			nr.GenerateName(format)
+			continue
 		} else {
-			if(nr.GenerateCallBack(nr, 	string(result))) {
+			if(nr.Validate(string(result))) {
 				nr.Names = append(nr.Names, string(result))
+				i = i + 1				
 			}
 		}
 	}
 
-	return nr.Names
+	return nr
 }
 
-func (nr *NameRuse) GenerateNLike(format string, n int) []string {
+func (nr *NameRuse) GenerateNLike(format string, n int) (*NameRuse) {
 	return nr.GenerateN(nr.Like(format), n)
 }
